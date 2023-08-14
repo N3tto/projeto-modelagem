@@ -39,7 +39,3 @@ st.subheader('rubrica_receita.csv')
 rubrica_receitas = pd.read_csv('./data/rubrica_receita.csv')
 st.write(rubrica_receitas.shape)
 st.write(rubrica_receitas) 
-
-# teste = pd.concat([fonte, responsavel], axis=1)
-# st.write(teste.shape)
-# st.write(teste)

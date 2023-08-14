@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title = "PISI3 - BSI - UFRPE por Gabriel Alves",
+    page_title = "Receita de recife",
     layout = "wide",
     menu_items = {
         'About': '''Este sistema foi desenvolvido pelo prof Gabriel Alves para fins didáticos, para a disciplina de 
@@ -14,22 +14,18 @@ st.set_page_config(
 )
 
 st.markdown(f'''
-    <h1>Sistema Didático para PISI3</h1>
+    <h1>Analise de Data Warehouse da Receita de Recife</h1>
     <br>
-    Este projeto tem o objetivo de prover vários exemplos úteis para os projetos que serão desenvolvidos na disicplina de 
-    Projeto Interdisciplinar para Sistemas de Informação 3 (PISI3) do 3° período do curso de Bacharelado em Sistemas de Informação
-    (BSI) da Sede da Universidade Federal Rural de Pernambuco (UFRPE).
+    <p>
+        Este projeto tem o objetivo de analisar, por meio de plotagem de gráficos, um data warehouse montado com os dados da Receita orçamentaria da cidade do Recife.
+        Está sendo desenvolvido para a disciplina de Modelagem de Dados da Universidade Federal Rural de Pernambuco, pelos graduandos:
+    </p>
     <br>
-    Alguns dos exemplos são:
     <ul>
-            <li>Páginas e componentes do Streamlit.</li>
-            <li>Uso do Pandas.</li>
-            <li>Uso do YData Profiling.</li>
-            <li>Utilização de arquivos parquet.</li>
-            <li>Visualização de dados.</li>
-            <li>Aprendizado de Máquina: Agrupamento e Classificação.</li>
+        <li>Antonio Neto</li>
+        <li>Larissa Cerqueira</li>
+        <li>Lucas Martins</li>
+        <li>Vinícius França</li>
     </ul>
-    Classroom: <a href="https://classroom.google.com/c/NjExNTAzOTU4MDQy?cjc=7qgaz7u">https://classroom.google.com/c/NjExNTAzOTU4MDQy?cjc=7qgaz7u</a><br>
-    Contato: gabriel.alves@ufrpe.br<br>
-    Acesse: <a href="bsi.ufrpe.br">bsi.ufrpe.br</a>
+    <br>
 ''', unsafe_allow_html=True)
