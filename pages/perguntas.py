@@ -33,6 +33,21 @@ st.write(fig)
 
 
 st.write('3. Quais orgãos estão gerando mais receitas? Há algum orgão que está abaixo das expectativas em relação a receita arrecadada e receita prevista?')
+
 st.write('4. De quais fontes de origem está vindo o maior valor de receita?')
+receita_fonte = pd.merge(receita, fonte, on='fonte_recurso_codigo')
+total_receita_por_fonte = receita_fonte.groupby('fonte_origem_receita_nome')['receita_prevista'].sum()
+total_receita_por_fonte_sorted = total_receita_por_fonte.sort_values(ascending=False)
+figFonteReceita = px.bar(total_receita_por_fonte_sorted, x=total_receita_por_fonte_sorted.index, y='receita_prevista', title='Receita Total por Fonte de Origem')
+figFonteReceita.update_layout(xaxis_title='Fonte de Origem', yaxis_title='Receita Total')
+st.write(figFonteReceita)
+
 st.write('5. Em quais áreas (orgãos, categorias) a receita arrecadada está ABAIXO ou ACIMA da prevista?')
+receita['diferenca_receita'] = receita['receita_arrecadada'] - receita['receita_prevista']
+receita['status_receita'] = np.where(receita['diferenca_receita'] > 0, 'Acima', np.where(receita['diferenca_receita'] < 0, 'Abaixo', 'Igual'))
+receita_completa = pd.merge(receita, responsavel, on=['orgao_codigo', 'unidade_codigo'])
+receita_completa = pd.merge(receita_completa, categoria_receitas, on='categoria_receita_codigo')
+figPrevisao = pd.pivot_table(receita_completa, values='diferenca_receita', index=['orgao_nome', 'categoria_receita_nome'], columns='status_receita', aggfunc='sum')
+st.write(figPrevisao)
+
 st.write('6. Alguma coisa em cima da receita prevista e arrecadada.. como isso vem se comportando ao longo do tempo.')
