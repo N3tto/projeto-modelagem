@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # Função para buscar dados do MySQL
 db_connection = mysql.connector.connect(
     host="localhost",
-    user="seu_root",
+    user="seu_user",
     password="sua_senha.",
     database="seu_database"
 )
@@ -27,16 +27,39 @@ FROM
 JOIN
     fato_receita fr ON fr.data_id = dd.data_id
 GROUP BY
+    dd.ano_nome
+ORDER BY
     dd.ano_nome;
 """
 
 df = pd.read_sql(query, db_connection)
-#db_connection.close()
+
+df['ano_anterior'] = df['total_receita_arrecadada'].shift(1)
+df['crescimento'] = (df['total_receita_arrecadada'] / df['ano_anterior']) - 1
+average_growth = df['crescimento'].mean() * 100  
+st.write(f"Taxa Média de Crescimento Anual: {average_growth:.2f}%")
+
 fig = px.bar(df, x="ano_nome", y="total_receita_arrecadada", title="Evolução da Receita Arrecadada Ano a Ano")
 st.plotly_chart(fig)
 
-st.write('2. Quais são as categorias de receita que mais contribuem para a receita total? Há mudanças nas categorias de receita predominantes ao longo do tempo? ')
-# Consulta para obter as categorias de receita que mais contribuem para a receita total
+st.write('2. Quais os meses onde as receitas tendem a serem maiores ')
+query = '''
+SELECT
+    dd.mes_nome AS Mes,
+    SUM(fr.receita_arrecadada) AS Total_Receita_Arrecadada 
+FROM
+    dm_data dd
+JOIN
+    fato_receita fr ON fr.data_id = dd.data_id
+GROUP BY
+    dd.mes_nome
+ORDER BY Total_Receita_Arrecadada desc;
+
+'''
+
+df = pd.read_sql(query, db_connection)
+fig = px.bar(df, x='Mes', y='Total_Receita_Arrecadada', title='Total de Receita Arrecadada por Meses')
+st.write(fig)
 
 
 
@@ -50,7 +73,7 @@ FROM
     fato_receita f
     JOIN dm_responsavel o ON f.orgao_unidade_id = o.orgao_codigo
 WHERE
-    o.orgao_nome != 'SECRETARIA DE FINANÇAS'
+    o.orgao_nome != 'SECRETARIA DE FINANÇAS' AND o.orgao_nome != 'SECRETARIA DE DESENV. SOCIAL, DIREITOS HUMANOS, JUVENTUDE E POLÍTICAS SOBRE DROGAS - ADM. SUPERVISIONADA'
 GROUP BY
     o.orgao_nome;
 """
@@ -89,7 +112,7 @@ fig = px.bar(df, x="Fonte_Origem", y="Receita_Arrecadada", title="Fontes de Orig
 st.plotly_chart(fig)
 
 st.write('5. Em quais áreas (orgãos, categorias) a receita arrecadada está ABAIXO ou ACIMA da prevista?')
-# Consulta para obter órgãos e categorias com receita arrecadada e prevista
+
 query = """
 SELECT
     r.orgao_nome AS Orgao,
@@ -108,5 +131,25 @@ GROUP BY
 
 
 
-st.write('6. Alguma coisa em cima da receita prevista e arrecadada.. como isso vem se comportando ao longo do tempo.')
+st.write('6. Como as diferentes categorias de receitas vem se comportado ao longo do tempo?')
 
+query = """
+SELECT dd.ano_nome as Ano, SUM(fr.receita_arrecadada) as Receita_Arrecadada, dc.categoria_receita_nome as categoria_receita_nome
+FROM fato_receita AS fr
+JOIN dm_data as dd ON dd.data_id = fr.data_id
+JOIN dm_categoria as dc ON dc.categoria_id = fr.categoria_id
+GROUP BY dd.ano_nome, dc.categoria_receita_nome
+order by dd.ano_nome;
+"""
+
+df = pd.read_sql(query, db_connection)
+
+df['Ano'] = df['Ano'].astype(int)  
+df = df.sort_values(['categoria_receita_nome', 'Ano'])
+df['crescimento_ano_a_ano'] = df.groupby('categoria_receita_nome')['Receita_Arrecadada'].pct_change() * 100  
+media_crescimento = df.groupby('categoria_receita_nome')['crescimento_ano_a_ano'].mean()
+st.write("Média de crescimento ano após ano para cada categoria:")
+st.write(media_crescimento)
+
+fig = px.line(df, x='Ano', y='Receita_Arrecadada', color='categoria_receita_nome', title='Crescimento da Receita por Categoria ao Longo dos Anos')
+st.plotly_chart(fig)
