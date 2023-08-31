@@ -114,19 +114,35 @@ st.plotly_chart(fig)
 st.write('5. Em quais áreas (orgãos, categorias) a receita arrecadada está ABAIXO ou ACIMA da prevista?')
 
 query = """
-SELECT
-    r.orgao_nome AS Orgao,
-    c.categoria_receita_nome AS Categoria,
-    SUM(f.receita_arrecadada) AS Receita_Arrecadada,
-    SUM(f.receita_prevista) AS Receita_Prevista
-FROM
-    fato_receita f
-    JOIN dm_responsavel r ON f.orgao_unidade_id = r.orgao_codigo
-    JOIN dm_categoria c ON f.categoria_id = c.categoria_receita_codigo
-GROUP BY
-    r.orgao_nome,
-    c.categoria_receita_nome;
+SELECT dd.ano_nome as Ano, 
+	   SUM(fr.receita_arrecadada) as Receita_Arrecadada, 
+	   dc.categoria_receita_nome as Categoria, 
+       SUM(fr.receita_prevista) as Receita_Prevista
+FROM fato_receita AS fr
+JOIN dm_data as dd ON dd.data_id = fr.data_id
+JOIN dm_categoria as dc ON dc.categoria_id = fr.categoria_id
+GROUP BY dd.ano_nome, dc.categoria_receita_nome
+order by dd.ano_nome;
 """
+
+df = pd.read_sql(query, db_connection)
+
+df_melted = pd.melt(df, id_vars=['Ano', 'Categoria'], value_vars=['Receita_Arrecadada', 'Receita_Prevista'], 
+                    var_name='Metrica', value_name='Valor')
+
+color_map = {'Receita_Arrecadada': 'blue', 'Receita_Prevista': 'green'}
+fig = px.bar(df_melted, x='Ano', y='Valor',
+             color='Metrica', 
+             barmode='group',
+             facet_col='Categoria',  
+             title='',
+             color_discrete_map=color_map)
+
+for annotation in fig['layout']['annotations']: 
+    annotation['font'] = dict(size=10) 
+
+fig.for_each_annotation(lambda a: a.update(text=a.text.replace(" ", "<br>")))
+st.plotly_chart(fig)
 
 
 
