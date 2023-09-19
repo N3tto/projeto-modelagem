@@ -43,7 +43,13 @@ df = pd.read_sql(query, db_connection)
 
 df['ano_anterior'] = df['total_receita_arrecadada'].shift(1)
 df['crescimento'] = (df['total_receita_arrecadada'] / df['ano_anterior']) - 1
+
+for column in ['total_receita_arrecadada']:
+    mean_value = df[column].mean()
+    df[column].replace(0, mean_value, inplace=True)
 average_growth = df['crescimento'].mean() * 100  
+
+
 st.write(f"Taxa Média de Crescimento Anual: {average_growth:.2f}%")
 
 fig1 = px.bar(df, x="ano_nome", y="total_receita_arrecadada", title="Evolução da Receita Arrecadada Ano a Ano")
@@ -83,6 +89,10 @@ query = f"""
     """
 
 df = pd.read_sql(query, db_connection)
+
+for column in ['Total_Receita_Arrecadada']:
+    mean_value = df[column].mean()
+    df[column].replace(0, mean_value, inplace=True)
 
 fig2 = px.bar(df, x='Mes', y='Total_Receita_Arrecadada', title='Total de Receita Arrecadada por Meses')
 fig2.update_yaxes(tickvals=[0, 500e6, 1e9, 1.5e9, 2e9, 2.5e9, 3e9, 3.5e9, 4e9, 4.5e9, 5e9, 5.5e9, 6e9, 6.5e9, 7e9, 7.5e9, 8e9],
@@ -130,7 +140,13 @@ if selected_orgaos:
     GROUP BY
         o.orgao_nome;
     """
+
     df = pd.read_sql(query, db_connection)
+    for column in ['Receita_Arrecadada', 'Receita_Prevista']:
+        mean_value = df[column].mean()
+        df[column].replace(0, mean_value, inplace=True)
+
+
     fig3 = px.bar(df, x="Orgao", y=["Receita_Arrecadada", "Receita_Prevista"], title="Receitas por Órgão")
     fig3.update_layout(
         autosize=False,
@@ -180,6 +196,10 @@ else:
     """
 
     df = pd.read_sql(query, db_connection)
+    for column in ['Receita_Arrecadada']:
+        mean_value = df[column].mean()
+        df[column].replace(0, mean_value, inplace=True)
+
     fig4 = px.bar(df, x="Fonte_Origem", y="Receita_Arrecadada", title="Fontes de Origem com Maior Valor de Receita")
 
     fig4.update_layout(
@@ -227,6 +247,10 @@ else:
     """
 
     df = pd.read_sql(query, db_connection)
+    for column in ['Receita_Arrecadada', 'Receita_Prevista']:
+        mean_value = df[column].mean()
+        df[column].replace(0, mean_value, inplace=True)
+
     df_melted = pd.melt(df, id_vars=['Ano', 'Categoria'], value_vars=['Receita_Arrecadada', 'Receita_Prevista'],
                         var_name='Metrica', value_name='Valor')
 
@@ -286,6 +310,9 @@ else:
     """
 
     df = pd.read_sql(query, db_connection)
+    for column in ['Receita_Arrecadada']:
+        mean_value = df[column].mean()
+        df[column].replace(0, mean_value, inplace=True)
 
     if df.empty:
         st.warning("Nenhum dado disponível para as opções selecionadas.")
