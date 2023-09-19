@@ -26,4 +26,4 @@ Para executar o projeto basta rodar o seguinte comando no terminal, na pasta do 
     streamlit run Home.py
 
 ## Acesso Remoto:
-https://04d5-168-196-195-129.ngrok-free.app/
+https://297f-168-196-195-129.ngrok-free.app/
