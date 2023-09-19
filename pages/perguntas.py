@@ -107,16 +107,15 @@ st.plotly_chart(fig2)
 ########################################
 
 
-st.write('3. Quais orgãos estão gerando mais receitas? Há algum orgão que está abaixo das expectativas em relação a receita arrecadada e receita prevista?')
+st.write('3. Quais órgãos estão gerando mais receitas? Há algum órgão que está abaixo das expectativas em relação à receita arrecadada e receita prevista?')
 
 query_orgaos = """
-SELECT DISTINCT orgao_nome 
+SELECT DISTINCT orgao_nome
 FROM dm_responsavel
-WHERE orgao_nome != 'SECRETARIA DE FINANÇAS' 
+WHERE orgao_nome != 'SECRETARIA DE FINANÇAS'
 AND orgao_nome != 'SECRETARIA DE DESENV. SOCIAL, DIREITOS HUMANOS, JUVENTUDE E POLÍTICAS SOBRE DROGAS - ADM. SUPERVISIONADA';
 """
 df_orgaos = pd.read_sql(query_orgaos, db_connection)
-df_orgaos['orgao_nome'] = df_orgaos['orgao_nome'].str.encode('utf-8').str.decode('utf-8')
 all_orgaos = df_orgaos['orgao_nome'].tolist()
 
 selected_orgaos = st.multiselect('Selecione os Órgãos:', options=all_orgaos, default=all_orgaos)
@@ -124,7 +123,6 @@ selected_orgaos = st.multiselect('Selecione os Órgãos:', options=all_orgaos, d
 selected_orgaos_str = ', '.join([f"'{orgao}'" for orgao in selected_orgaos])
 
 if selected_orgaos:
-    selected_orgaos_str = ', '.join([f"'{orgao}'" for orgao in selected_orgaos])
     query = f"""
     SELECT
         o.orgao_nome AS Orgao,
@@ -132,11 +130,9 @@ if selected_orgaos:
         SUM(f.receita_prevista) AS Receita_Prevista
     FROM
         fato_receita f
-        JOIN dm_responsavel o ON f.orgao_unidade_id = o.orgao_codigo
+        JOIN dm_responsavel o ON f.orgao_unidade_id = o.orgao_unidade_id
     WHERE
         o.orgao_nome IN ({selected_orgaos_str})
-        AND o.orgao_nome != 'SECRETARIA DE FINANÇAS' 
-        AND o.orgao_nome != 'SECRETARIA DE DESENV. SOCIAL, DIREITOS HUMANOS, JUVENTUDE E POLÍTICAS SOBRE DROGAS - ADM. SUPERVISIONADA'
     GROUP BY
         o.orgao_nome;
     """
@@ -145,7 +141,6 @@ if selected_orgaos:
     for column in ['Receita_Arrecadada', 'Receita_Prevista']:
         mean_value = df[column].mean()
         df[column].replace(0, mean_value, inplace=True)
-
 
     fig3 = px.bar(df, x="Orgao", y=["Receita_Arrecadada", "Receita_Prevista"], title="Receitas por Órgão")
     fig3.update_layout(
@@ -157,59 +152,45 @@ if selected_orgaos:
     st.plotly_chart(fig3)
 else:
     st.warning("Por favor, selecione pelo menos um órgão.")
-
-########################################
-#                                      #
-#               Pergunta 4             #
-#                                      #
-########################################
+# ########################################
+# #                                      #
+# #               Pergunta 4             #
+# #                                      #
+# ########################################
 st.write('4. De quais fontes de origem está vindo o maior valor de receita?')
-query_fontes = """
-SELECT DISTINCT fonte_origem_receita_nome 
-FROM dm_fonte
-WHERE fonte_origem_receita_nome NOT IN ('SECRETARIA DE DESENV. SOCIAL, DIREITOS HUMANOS, JUVENTUDE E POLÍTICAS SOBRE DROGAS - ADM. SUPERVISIONADA');
-"""
-df_fontes = pd.read_sql(query_fontes, db_connection)
-all_fontes = df_fontes['fonte_origem_receita_nome'].tolist()
+min_year, max_year = st.slider("Selecione a faixa de anos:", 2002, 2023, (2005, 2020), key="sliderq4")
 
-selected_fontes = st.multiselect('Selecione as Fontes de Origem:', options=all_fontes, default=all_fontes)
-if not selected_fontes:
-    st.warning("Por favor, selecione pelo menos uma Fonte de Origem para visualizar os dados.")
-else:
-    selected_fontes_str = ', '.join([f"'{fonte}'" for fonte in selected_fontes])
-
-    query = f"""
+query = f"""
     SELECT
-        fo.fonte_origem_receita_nome AS Fonte_Origem,
-        SUM(f.receita_arrecadada) AS Receita_Arrecadada
+        df.fonte_origem_receita_nome AS Fonte_Origem,
+        SUM(fr.receita_arrecadada) AS Total_Receita_Arrecadada 
     FROM
-        fato_receita f
-        JOIN dm_fonte fo ON f.fonte_id = fo.fonte_origem_receita_codigo
+        dm_fonte df
+    JOIN
+        fato_receita fr ON fr.fonte_id = df.fonte_id
+    JOIN
+        dm_data dd ON fr.data_id = dd.data_id
     WHERE
-        fo.fonte_origem_receita_nome IN ({selected_fontes_str})
+        dd.ano_nome BETWEEN {min_year} AND {max_year}
     GROUP BY
-        fo.fonte_origem_receita_nome
-    HAVING
-        Receita_Arrecadada > 0
-    ORDER BY
-        SUM(f.receita_arrecadada) DESC;
+        df.fonte_origem_receita_nome
+    ORDER BY Total_Receita_Arrecadada DESC;
     """
 
-    df = pd.read_sql(query, db_connection)
-    for column in ['Receita_Arrecadada']:
-        mean_value = df[column].mean()
-        df[column].replace(0, mean_value, inplace=True)
+df = pd.read_sql(query, db_connection)
 
-    fig4 = px.bar(df, x="Fonte_Origem", y="Receita_Arrecadada", title="Fontes de Origem com Maior Valor de Receita")
+for column in ['Total_Receita_Arrecadada']:
+    mean_value = df[column].mean()
+    df[column].replace(0, mean_value, inplace=True)
 
-    fig4.update_layout(
-        autosize=False,
-        width=1500,
-        height=1000
-    )
-    fig4.update_xaxes(tickangle=45)
+fig4 = px.bar(df, x='Fonte_Origem', y='Total_Receita_Arrecadada', title='Total de Receita Arrecadada por Fonte de Origem')
 
-    st.plotly_chart(fig4)
+fig4.update_layout(height=1000, width=1000)
+fig4.update_xaxes(tickangle=45)
+fig4.update_traces(marker=dict(line=dict(width=0.5)), selector=dict(type='bar'))
+
+
+st.plotly_chart(fig4)
 
 ########################################
 #                                      #
